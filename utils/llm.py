@@ -59,14 +59,14 @@ POINTS ESTIMATE: 5
 """
     return mock_response
 
-def embed_text(text: str, embedding_model: OpenAIEmbeddings) -> List[float]:
+def embed_text(text: str, embedding_model: OpenAIEmbeddings = None) -> List[float]:
     """
     Generates an embedding for the given text using the provided model.
     NOTE: This is a MOCKED implementation for development purposes.
 
     Args:
         text: The text to embed.
-        embedding_model: An initialized instance of OpenAIEmbeddings.
+        embedding_model: An initialized instance of OpenAIEmbeddings (optional for mock).
 
     Returns:
         A mock embedding vector (list of floats).

@@ -5,32 +5,49 @@ A utility for accurately scraping text and structured content from various
 document types. It uses 'unstructured' as the primary method for its ability
 to infer tables and other document elements, with a fallback to direct
 Tesseract OCR for simple text extraction.
+
 """
 import os
 from typing import List, Union
 import pytesseract
 from pdf2image import convert_from_path
+from unstructured.documents.elements import Element, Table, Text
 from unstructured.partition.pdf import partition_pdf
 from unstructured.partition.xlsx import partition_xlsx
-from unstructured.documents.elements import Element
 
-def scrape_pdf_with_unstructured(file_path: str) -> List[Element]:
+def scrape_pdf_hybrid(file_path: str) -> List[Element]:
     """
-    Scrapes text and elements from a PDF using the 'unstructured' library.
-    This method is preferred as it can identify tables and other elements.
+    Scrapes a PDF using a hybrid approach:
+    1. Tesseract OCR is used for raw text extraction.
+    2. 'unstructured' is used to extract any tables.
     """
-    print(f"Scraping PDF with unstructured: {file_path}")
+    print(f"Scraping PDF with hybrid (OCR + Tables) method: {file_path}")
+    elements: List[Element] = []
+
+    # 1. Get raw text using Tesseract OCR
+    # The scrape_pdf_with_ocr function already prints its progress
+    ocr_text = scrape_pdf_with_ocr(file_path)
+    if ocr_text:
+        elements.append(Text(text=ocr_text))
+
+    # 2. Get tables using unstructured
+    print(f"Extracting tables with unstructured from: {file_path}")
     try:
-        # The "auto" strategy lets unstructured decide the best parsing method.
-        # infer_table_structure is key for identifying tables.
-        return partition_pdf(
+        unstructured_elements = partition_pdf(
             filename=file_path,
             infer_table_structure=True,
             strategy="auto"
         )
+        table_elements = [el for el in unstructured_elements if isinstance(el, Table)]
+        if table_elements:
+            print(f"Found {len(table_elements)} tables.")
+            elements.extend(table_elements)
+        else:
+            print("No tables found by unstructured.")
     except Exception as e:
-        print(f"Error scraping PDF {file_path} with unstructured: {e}")
-        return []
+        print(f"Error extracting tables from {file_path} with unstructured: {e}")
+
+    return elements
 
 def scrape_pdf_with_ocr(file_path: str) -> str:
     """
@@ -68,8 +85,8 @@ def scrape_document(file_path: str) -> List[Element]:
     """
     ext = os.path.splitext(file_path)[1].lower()
     if ext == ".pdf":
-        # Default to the more advanced unstructured method
-        return scrape_pdf_with_unstructured(file_path)
+        # Use the new hybrid method for PDFs
+        return scrape_pdf_hybrid(file_path)
     elif ext == ".xlsx":
         return scrape_excel(file_path)
     else:
@@ -95,20 +112,13 @@ if __name__ == '__main__':
             if not elements:
                 print("No content was extracted.")
                 continue
-
-            output_filename = os.path.splitext(file_name)[0] + "_scraped.txt"
-            output_filepath = os.path.join(CORPUS_DIR, output_filename)
-            print(f"Writing extracted content to '{output_filepath}'...")
-
-            with open(output_filepath, "w", encoding="utf-8") as f:
-                for element in elements:
-                    # Check for HTML representation first, ensuring it's not None or empty
-                    if hasattr(element, "metadata") and element.metadata.text_as_html:
-                        f.write(f"--- Element: {type(element).__name__} ---\n")
-                        f.write(element.metadata.text_as_html + "\n\n")
-                    # Fallback to the plain text representation, ensuring it's not None or empty
-                    elif element.text:
-                        f.write(f"--- Element: {type(element).__name__} ---\n")
-                        f.write(element.text + "\n\n")
             
-            print("Write complete.")
+            print(f"Successfully extracted {len(elements)} elements.")
+            for i, element in enumerate(elements):
+                print(f"\n--- Element {i+1} (type: {type(element).__name__}) ---")
+                # Check for HTML representation first, ensuring it's not None or empty
+                if hasattr(element, "metadata") and element.metadata.text_as_html:
+                    print(element.metadata.text_as_html)
+                # Fallback to the plain text representation, ensuring it's not None or empty
+                elif element.text:
+                    print(element.text)

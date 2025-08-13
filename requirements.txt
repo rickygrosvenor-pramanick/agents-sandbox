@@ -13,3 +13,7 @@ openpyxl
 rank_bm25
 click
 tqdm
+pytesseract
+pdf2image
+fastapi
+uvicorn[standard]
