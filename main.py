@@ -15,9 +15,9 @@ curl -X 'POST' \
 """
 from fastapi import FastAPI
 from pydantic import BaseModel
-from agent import run_agent, generate_enhanced_prompt
+from agent import generate_enhanced_prompt
 from retriever import query_vector_store
-from utils.llm import get_response
+from utils.llm import get_response, llm, embedding_model
 
 # Initialize the FastAPI app
 app = FastAPI(
@@ -55,7 +55,7 @@ def generate_story_endpoint(request: StoryRequest):
     enhanced_prompt = generate_enhanced_prompt(request.prompt, retrieved_docs)
 
     # 3. Get final response from the (mocked) LLM
-    final_response = get_response(user_prompt=enhanced_prompt, llm=None)
+    final_response = get_response(user_prompt=enhanced_prompt, llm=llm)
 
     return StoryResponse(story=final_response)
 

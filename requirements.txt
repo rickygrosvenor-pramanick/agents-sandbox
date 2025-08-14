@@ -17,3 +17,4 @@ pytesseract
 pdf2image
 fastapi
 uvicorn[standard]
+mcp-client

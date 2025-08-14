@@ -12,7 +12,11 @@ Retrieval-Augmented Generation pipeline by:
 """
 
 from retriever import query_vector_store
-from utils.llm import get_response
+from utils.llm import get_response, llm, embedding_model
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  
 
 def generate_enhanced_prompt(user_prompt: str, context_docs: list) -> str:
     """
@@ -76,9 +80,8 @@ def run_agent(user_prompt: str):
     print(f"{enhanced_prompt[:600]}...") # Print a snippet of the prompt
 
     # 3. Get the final response from the LLM
-    # Note: We pass `llm=None` because our get_response is mocked.
     print("\n--- Getting Final Response from LLM ---")
-    final_response = get_response(user_prompt=enhanced_prompt, llm=None)
+    final_response = get_response(user_prompt=enhanced_prompt, llm=llm)
 
     # 4. Print the final answer
     print("\n--- AGENT'S FINAL RESPONSE ---")
